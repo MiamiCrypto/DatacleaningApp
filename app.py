@@ -1,56 +1,88 @@
 import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
 
-def parse_measurement(measurement):
-    """ Parses a measurement string (feet and inches) and returns total inches. """
-    if '"' in measurement:
-        measurement = measurement.replace('"', '')
+# from your_gpt_library import analyze_with_gpt
 
-    parts = measurement.split("'")
-    feet = 0
-    inches = 0
+# Function to clean data
+def clean_data(df, method='drop'):
+    if method == 'drop':
+        df_cleaned = df.dropna()
+    elif method == 'fill_mean':
+        df_cleaned = df.fillna(df.mean())
+    elif method == 'fill_median':
+        df_cleaned = df.fillna(df.median())
+    elif method == 'fill_mode':
+        df_cleaned = df.fillna(df.mode().iloc[0])
+    return df_cleaned
 
-    if len(parts) == 2:
-        feet = float(parts[0]) if parts[0] else 0
-        inches = int(parts[1]) if parts[1] else 0
-    elif "'" in measurement:
-        feet = float(parts[0]) if parts[0] else 0
-    else:
-        try:
-            feet = float(measurement)
-        except ValueError:
-            return 0  # Return 0 if the input is not a valid number
+# Function to save a matplotlib figure
+def save_fig(fig, filename='plot.png'):
+    fig.savefig(filename)
+    return filename
 
-    return int(feet * 12 + inches)
+# Streamlit UI
+st.title('GPT-driven Data Analysis for NFL Players')
 
-def calculate_total_measurements(input_str):
-    """ Calculates the total of measurements input in the format '2+3'4"+5'6"'. """
-    try:
-        measurements = input_str.split('+')
-        total_inches = sum(parse_measurement(m.strip()) for m in measurements)
-        feet = total_inches // 12
-        inches = total_inches % 12
-        return f"{feet}'{inches}\""
-    except Exception as e:
-        return "Error in calculation"
+# File upload functionality
+uploaded_file = st.file_uploader("Upload your NFL dataset CSV", type="csv")
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
 
-# Streamlit UI components
-st.title('Kitchen Cabinet Calculator')
+    # Data cleaning options
+    st.subheader("Data Cleaning Options")
+    clean_method = st.selectbox("How would you like to handle missing values?",
+                                ('drop', 'fill_mean', 'fill_median', 'fill_mode'))
+    if st.button('Clean Data'):
+        df_cleaned = clean_data(df, method=clean_method)
+        st.write("Data cleaned using the method:", clean_method)
+        st.dataframe(df_cleaned)
 
-#image_path = 'CalculatorApp.png'  # Replace with your image path or URL
-#st.image(image_path, caption='Kitchen Cabinet Example')
+    # Text input for analysis prompt
+    analysis_prompt = st.text_input('Enter your analysis prompt for GPT:')
+    
+    # Button to trigger analysis
+    if st.button('Analyze'):
+        # Assume we have a function that will analyze the prompt with GPT
+        # gpt_analysis = analyze_with_gpt(analysis_prompt, df_cleaned)
 
-## Display an image with a specified width
-image_path = 'CalculatorApp.png'  # Image path or URL
-st.image(image_path, caption='Kitchen Cabinet Example', width=300)  # Set the width as needed
+        # Generate visualization based on GPT analysis
+        # Assume we have a function to map GPT's output to a visual
+        # fig = create_visual_from_gpt_output(gpt_analysis, df_cleaned)
+        fig, ax = plt.subplots()
+        # Placeholder for actual plotting code
+        ax.plot([1, 2, 3], [1, 2, 3])
+        
+        # Display the visual
+        st.pyplot(fig)
+        
+        # Save figure to file
+        if st.button('Save Visual'):
+            filepath = save_fig(fig)
+            st.success(f"Saved as {filepath}")
+            
+            # Provide a button to download the image
+            with open(filepath, "rb") as file:
+                btn = st.download_button(
+                    label="Download Image",
+                    data=file,
+                    file_name="visual.png",
+                    mime="image/png"
+                )
+                if btn:
+                    st.success("Image downloaded!")
 
-features = ['Upper Cabinets', 'Lower Cabinets', 'Countertop', 'Backsplash', 'Full Cabinets']
-user_inputs = {feature: st.text_input(f"Enter measurements for {feature} (e.g., 2+3'4\"+5'6\"): ") for feature in features}
+# Define the preprocess_for_gpt function based on how you want to preprocess the DataFrame for GPT
+def preprocess_for_gpt(df):
+    # Logic to preprocess the DataFrame
+    return df
 
-if st.button('Calculate'):
-    st.subheader("Total Linear Feet and Inches for each feature:")
-    for feature, input_str in user_inputs.items():
-        total = calculate_total_measurements(input_str)
-        st.text(f"{feature}: {total}")
+# Define the function to create visuals from GPT output
+def create_visual_from_gpt_output(gpt_analysis, df):
+    # Create visualization based on the analysis
+    fig, ax = plt.subplots()
+    # Visualization code here
+    return fig
 
-# Optional: Any additional functionality or components you want to add
 
